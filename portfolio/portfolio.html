@@ -17,6 +17,9 @@
 <link rel="icon" type="image/png" sizes="48x48" href="../favicon-48.png">
 <link rel="icon" type="image/png" sizes="192x192" href="../favicon-192.png">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="application-name" content="made_by.david">
+<meta name="apple-mobile-web-app-title" content="made_by.david">
 <style>
 
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700;800&display=swap');
@@ -259,8 +262,6 @@ footer a:hover{color:var(--text);}
 .cc-cat h4{font-size:13px;font-weight:700;margin-bottom:3px;}
 .cc-cat p{color:var(--dim);font-size:12px;}
 .cc-tag{display:inline-block;margin-left:8px;font-size:10px;font-weight:600;border:1px solid var(--line);color:var(--dim);padding:1px 8px;border-radius:10px;vertical-align:middle;}
-.cc-warn{display:none;color:#fff;font-size:12px;margin:0 0 14px;border-left:2px solid #fff;padding-left:10px;}
-.cc-warn.show{display:block;}
 .cc-switch{position:relative;flex-shrink:0;width:40px;height:22px;}
 .cc-switch input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;z-index:1;}
 .cc-switch i{position:absolute;inset:0;background:#2B2B2B;border-radius:22px;transition:background .25s ease;}
@@ -559,8 +560,8 @@ document.querySelectorAll('.main-tab').forEach(btn => {
 <!-- ============ COOKIE CONSENT (GDPR) ============ -->
 <div class="cc" id="ccBanner" role="dialog" aria-label="Nastavenia cookies" hidden>
   <div class="cc-view" id="ccViewMain">
-    <div class="cc-title">Cookies a súkromie</div>
-    <p class="cc-text">Videá v portfóliu sa načítavajú z YouTube a na anonymnú štatistiku návštevnosti používam Google Analytics. Obe služby môžu ukladať cookies, preto sa načítajú až po tvojom súhlase. Tvoju voľbu si pamätám 12 mesiacov.</p>
+    <div class="cc-title">Táto stránka používa cookies</div>
+    <p class="cc-text">Cookies používam na zobrazenie videí z YouTube a na anonymnú štatistiku návštevnosti (Google Analytics). Môžeš ich povoliť všetky, odmietnuť alebo si vybrať v nastaveniach.</p>
     <div class="cc-actions">
       <button type="button" class="cc-btn cc-primary" data-cc="all">Povoliť všetko</button>
       <button type="button" class="cc-btn" data-cc="reject">Odmietnuť</button>
@@ -569,26 +570,25 @@ document.querySelectorAll('.main-tab').forEach(btn => {
   </div>
   <div class="cc-view" id="ccViewSettings" hidden>
     <div class="cc-title">Nastavenia cookies</div>
-    <p class="cc-text">Vyber, ktoré cookies povolíš. Voľbu môžeš kedykoľvek zmeniť cez odkaz „Nastavenia cookies“ v pätičke stránky.</p>
+    <p class="cc-text">Vyber, ktoré cookies chceš mať zapnuté. Nastavenia nájdeš kedykoľvek v pätičke stránky.</p>
     <div class="cc-cat">
       <div>
         <h4>Nevyhnutné<span class="cc-tag">vždy zapnuté</span></h4>
-        <p>Uloženie tvojej voľby o cookies v prehliadači na 12 mesiacov. Neobsahuje žiadne osobné údaje.</p>
+        <p>Potrebné na základné fungovanie stránky. Nedajú sa vypnúť.</p>
       </div>
       <label class="cc-switch"><input type="checkbox" checked disabled aria-label="Nevyhnutné"><i></i></label>
     </div>
     <div class="cc-cat">
       <div>
         <h4>Videá (YouTube)<span class="cc-tag">potrebné na zobrazenie videí</span></h4>
-        <p>Prehrávač YouTube (Google) sa načíta až po povolení a môže ukladať vlastné cookies a spracovať tvoju IP adresu.</p>
+        <p>Potrebné na zobrazenie videí z YouTube v portfóliu. Prehrávač YouTube (Google) môže ukladať vlastné cookies.</p>
       </div>
       <label class="cc-switch"><input type="checkbox" id="ccVideos" aria-label="Videá (YouTube)"><i></i></label>
     </div>
-    <div class="cc-warn" id="ccWarn">Bez povolenia YouTube sa videá nezobrazia — namiesto nich uvidíš len zástupný box.</div>
     <div class="cc-cat">
       <div>
         <h4>Analytika (Google Analytics)</h4>
-        <p>Anonymná štatistika návštevnosti — cookies _ga a _ga_* s platnosťou až 2 roky. Pomáha mi zistiť, ktoré časti webu sú užitočné.</p>
+        <p>Anonymná štatistika návštevnosti. Pomáha mi zistiť, ktoré časti webu sú užitočné.</p>
       </div>
       <label class="cc-switch"><input type="checkbox" id="ccAnalytics" aria-label="Analytika (Google Analytics)"><i></i></label>
     </div>
@@ -609,15 +609,16 @@ document.querySelectorAll('.main-tab').forEach(btn => {
 <script>
 /*
   COOKIE CONSENT
-  - YouTube videá (iframe s data-src) a Google Analytics sa načítajú AŽ po súhlase.
-  - Voľba sa ukladá do localStorage na 12 mesiacov.
-  - Ak niekto videá nepovolí, pri ďalšej návšteve sa ukáže malá lišta dole (dá sa zavrieť krížikom).
+  - Predvolene sú YouTube videá aj Google Analytics ZAPNUTÉ (kým návštevník nevyberie inak).
+  - "Povoliť všetko" nič nezmení, "Odmietnuť" vypne všetko okrem nevyhnutných, "Nastavenia" dajú vlastný výber.
+  - Voľba sa ukladá v prehliadači (localStorage), aby "Odmietnuť" platilo aj na ďalších stránkach.
+  - Ak niekto videá vypne, pri ďalšej návšteve sa ukáže malá lišta dole (dá sa zavrieť krížikom).
   - Zmena voľby: odkaz "Nastavenia cookies" v pätičke.
 */
 (function () {
   var KEY = 'mbd_cookie_consent_v1';
   var SESSION_KEY = 'mbd_cc_dismissed';
-  var GA_ID = 'G-PWF82TD3MR';
+  var GA_ID = 'G-HD8CC89JFL';
   var MAX_AGE = 365 * 24 * 60 * 60 * 1000;
 
   var banner = document.getElementById('ccBanner');
@@ -626,7 +627,6 @@ document.querySelectorAll('.main-tab').forEach(btn => {
   var viewSettings = document.getElementById('ccViewSettings');
   var chkVideos = document.getElementById('ccVideos');
   var chkAnalytics = document.getElementById('ccAnalytics');
-  var warn = document.getElementById('ccWarn');
 
   var loaded = { videos: false, analytics: false };
   var consent = readConsent();
@@ -698,9 +698,11 @@ document.querySelectorAll('.main-tab').forEach(btn => {
   }
 
   /* ---------- UI ---------- */
+  function current() { return consent || { videos: true, analytics: true }; }   // bez voľby = všetko zapnuté
   function apply() {
-    if (consent && consent.videos) loadVideos(); else addPlaceholders();
-    if (consent && consent.analytics) loadAnalytics();
+    var c = current();
+    if (c.videos) loadVideos(); else addPlaceholders();
+    if (c.analytics) loadAnalytics();
   }
   function openMain() {
     mini.hidden = true;
@@ -709,15 +711,14 @@ document.querySelectorAll('.main-tab').forEach(btn => {
     banner.hidden = false;
   }
   function openSettings() {
-    chkVideos.checked = !!(consent && consent.videos);
-    chkAnalytics.checked = !!(consent && consent.analytics);
-    updateWarn();
+    var c = current();
+    chkVideos.checked = c.videos;
+    chkAnalytics.checked = c.analytics;
     mini.hidden = true;
     viewMain.hidden = true;
     viewSettings.hidden = false;
     banner.hidden = false;
   }
-  function updateWarn() { warn.classList.toggle('show', !chkVideos.checked); }
 
   function commit(v, a) {
     var hadVideos = loaded.videos, hadAnalytics = loaded.analytics;
@@ -742,11 +743,10 @@ document.querySelectorAll('.main-tab').forEach(btn => {
       case 'reject':   commit(false, false); break;
       case 'settings': openSettings(); break;
       case 'save':     commit(chkVideos.checked, chkAnalytics.checked); break;
-      case 'videos':   commit(true, consent ? consent.analytics : false); break;
+      case 'videos':   commit(true, current().analytics); break;
       case 'dismiss':  setDismissed(); mini.hidden = true; break;
     }
   });
-  chkVideos.addEventListener('change', updateWarn);
 
   apply();
   if (!consent) openMain();
