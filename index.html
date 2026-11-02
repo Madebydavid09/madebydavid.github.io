@@ -199,8 +199,6 @@ nav ul li:last-child a:hover{background:#fff;color:#000;}
 textarea.form-field{resize:vertical;min-height:90px;}
 .form-status{margin-top:16px;font-size:14px;color:var(--dim);}
 .form-status.ok{color:#fff;}
-.form-note{color:var(--dim);font-size:12px;max-width:520px;margin:-6px 0 18px;}
-.human-check{display:block;color:var(--dim);font-size:13px;margin-bottom:2px;}
 
 /* SEO TEXT: uvod, kroky spoluprace, FAQ */
 .lead{color:var(--dim);max-width:640px;font-size:16px;margin-top:-24px;margin-bottom:38px;}
@@ -446,17 +444,12 @@ footer a:hover{color:var(--text);}
         <li>Instagram <span><a href="https://instagram.com/made_by.david" target="_blank">@made_by.david</a></span></li>
       </ul>
 
-      <form id="contactForm" class="contact-form" action="https://formsubmit.co/d.i.davidilicc@gmail.com" method="POST" accept-charset="UTF-8">
+      <form id="contactForm" class="contact-form">
         <input class="form-field" type="text" name="name" placeholder="Meno" required>
         <input class="form-field" type="email" name="email" placeholder="Email" required>
         <textarea class="form-field" name="message" placeholder="O čo ide? Čo potrebuješ a do kedy..." required></textarea>
         <input type="hidden" name="_subject" value="Nová správa z made_by.david">
         <input type="hidden" name="_captcha" value="false">
-        <input type="hidden" name="_next" value="https://madebydavid09.github.io/?sent=1#kontakt">
-        <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true">
-        <label class="human-check" for="humanAnswer" id="humanQ">Overenie, že nie si robot: koľko je 4 + 7?</label>
-        <input class="form-field" type="text" inputmode="numeric" autocomplete="off" id="humanAnswer" placeholder="Tvoja odpoveď" required>
-        <p class="form-note">Odoslaním súhlasíš so spracovaním tvojich údajov na účel odpovede na správu. Správu doručuje služba FormSubmit.</p>
         <button type="submit" class="btn">Odoslať správu</button>
         <div id="formStatus" class="form-status"></div>
       </form>
@@ -485,55 +478,34 @@ if (window.matchMedia('(hover: hover)').matches) {
 </script>
 
 <script>
-// kontaktný formulár: overovacia otázka + odoslanie bez opustenia stránky
-(function () {
-  var form = document.getElementById('contactForm');
-  if (!form) return;
-  var status = document.getElementById('formStatus');
-  var q = document.getElementById('humanQ');
-  var ans = document.getElementById('humanAnswer');
-  var a, b;
-
-  function newQuestion() {
-    a = 2 + Math.floor(Math.random() * 8);
-    b = 2 + Math.floor(Math.random() * 8);
-    q.textContent = 'Overenie, že nie si robot: koľko je ' + a + ' + ' + b + '?';
-    ans.value = '';
-  }
-  function say(text, ok) { status.textContent = text; status.className = 'form-status' + (ok ? ' ok' : ''); }
-  newQuestion();
-
-  form.addEventListener('submit', function (e) {
+const contactForm = document.getElementById('contactForm');
+if (contactForm) {
+  contactForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (parseInt(ans.value, 10) !== a + b) {
-      say('Overovacia odpoveď nie je správna, skús to prosím znova.', false);
-      newQuestion();
-      return;
+    const status = document.getElementById('formStatus');
+    const submitBtn = contactForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    status.textContent = 'Odosielam...';
+    status.className = 'form-status';
+    try {
+      const res = await fetch('https://formsubmit.co/ajax/d.i.davidilicc@gmail.com', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        body: new FormData(contactForm)
+      });
+      if (res.ok) {
+        status.textContent = 'Správa odoslaná, ozvem sa čo najskôr!';
+        status.className = 'form-status ok';
+        contactForm.reset();
+      } else {
+        status.textContent = 'Niečo sa pokazilo, skús to prosím znova alebo napíš priamo na email.';
+      }
+    } catch (err) {
+      status.textContent = 'Niečo sa pokazilo, skús to prosím znova alebo napíš priamo na email.';
     }
-    var btn = form.querySelector('button[type="submit"]');
-    btn.disabled = true;
-    say('Odosielam...', false);
-    fetch('https://formsubmit.co/ajax/d.i.davidilicc@gmail.com', {
-      method: 'POST',
-      headers: { 'Accept': 'application/json' },
-      body: new FormData(form)
-    }).then(function (res) {
-      if (res.ok) { say('Správa odoslaná, ozvem sa čo najskôr!', true); form.reset(); newQuestion(); }
-      else { say('Niečo sa pokazilo, skús to prosím znova alebo napíš priamo na email.', false); }
-    }).catch(function () {
-      say('Niečo sa pokazilo, skús to prosím znova alebo napíš priamo na email.', false);
-    }).then(function () { btn.disabled = false; });
+    submitBtn.disabled = false;
   });
-
-  // zálohový návrat z klasického odoslania (?sent=1)
-  var params = new URLSearchParams(location.search);
-  if (params.get('sent') === '1') {
-    say('Správa odoslaná, ozvem sa čo najskôr!', true);
-    params.delete('sent');
-    var qs = params.toString();
-    history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
-  }
-})();
+}
 </script>
 
 <script>
