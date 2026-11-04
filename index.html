@@ -479,38 +479,29 @@ if (window.matchMedia('(hover: hover)').matches) {
 </script>
 
 <script>
-// kontaktný formulár (FormSubmit) — odoslanie bez opustenia stránky, so zálohou
+// kontaktný formulár (FormSubmit) — odoslanie bez opustenia stránky
 (function () {
   var EMAIL = 'd.i.davidilicc@gmail.com';
   var form = document.getElementById('contactForm');
   if (!form) return;
   var status = document.getElementById('formStatus');
 
-  function say(text, ok, withMail) {
+  function say(text, ok) {
     status.className = 'form-status' + (ok ? ' ok' : '');
     status.textContent = text;
-    if (withMail) {
-      status.appendChild(document.createTextNode(' '));
-      var a = document.createElement('a');
-      a.href = 'mailto:' + EMAIL;
-      a.textContent = EMAIL;
-      a.style.textDecoration = 'underline';
-      status.appendChild(a);
-    }
   }
 
-  // záloha: klasické odoslanie formulára (funguje aj keď prehliadač zablokuje AJAX)
-  function nativeSubmit() {
-    var next = form.querySelector('input[name="_next"]');
-    if (!next) {
-      next = document.createElement('input');
-      next.type = 'hidden'; next.name = '_next';
-      form.appendChild(next);
-    }
-    next.value = location.origin + location.pathname + '?sent=1#kontakt';
-    form.action = 'https://formsubmit.co/' + EMAIL;
-    form.method = 'POST';
-    form.submit();
+  // keď sa odoslanie nepodarí: ostávame na stránke a ponúkneme správu poslať emailom (už vyplnenú)
+  function fail(text) {
+    var d = new FormData(form);
+    var body = (d.get('message') || '') + '\n\nMeno: ' + (d.get('name') || '') + '\nEmail: ' + (d.get('email') || '');
+    var a = document.createElement('a');
+    a.href = 'mailto:' + EMAIL + '?subject=' + encodeURIComponent('Nová správa z made_by.david') + '&body=' + encodeURIComponent(body);
+    a.textContent = 'Poslať správu emailom';
+    a.style.textDecoration = 'underline';
+    status.className = 'form-status';
+    status.textContent = text + ' ';
+    status.appendChild(a);
   }
 
   form.addEventListener('submit', async function (e) {
@@ -530,29 +521,16 @@ if (window.matchMedia('(hover: hover)').matches) {
       if (ok) {
         say('Správa odoslaná, ozvem sa čo najskôr!', true);
         form.reset();
-      } else if (/activat/i.test(String(data.message || ''))) {
-        console.warn('FormSubmit: formulár treba aktivovať (potvrdiť email od FormSubmit).', data);
-        say('Formulár zatiaľ nie je aktivovaný — napíš mi prosím priamo na email:', false, true);
       } else {
         console.warn('FormSubmit odpoveď:', res.status, data);
-        say('Nepodarilo sa odoslať. Skús to prosím znova alebo napíš priamo na email:', false, true);
+        fail('Správu sa nepodarilo odoslať.');
       }
     } catch (err) {
-      console.warn('AJAX odoslanie zlyhalo, skúšam klasické odoslanie:', err);
-      nativeSubmit();
-      return;
+      console.warn('Odoslanie formulára zlyhalo:', err);
+      fail('Správu sa nepodarilo odoslať.');
     }
     btn.disabled = false;
   });
-
-  // návrat z klasického odoslania (?sent=1)
-  var params = new URLSearchParams(location.search);
-  if (params.get('sent') === '1') {
-    say('Správa odoslaná, ozvem sa čo najskôr!', true);
-    params.delete('sent');
-    var qs = params.toString();
-    history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
-  }
 })();
 </script>
 
