@@ -479,34 +479,81 @@ if (window.matchMedia('(hover: hover)').matches) {
 </script>
 
 <script>
-const contactForm = document.getElementById('contactForm');
-if (contactForm) {
-  contactForm.addEventListener('submit', async (e) => {
+// kontaktný formulár (FormSubmit) — odoslanie bez opustenia stránky, so zálohou
+(function () {
+  var EMAIL = 'd.i.davidilicc@gmail.com';
+  var form = document.getElementById('contactForm');
+  if (!form) return;
+  var status = document.getElementById('formStatus');
+
+  function say(text, ok, withMail) {
+    status.className = 'form-status' + (ok ? ' ok' : '');
+    status.textContent = text;
+    if (withMail) {
+      status.appendChild(document.createTextNode(' '));
+      var a = document.createElement('a');
+      a.href = 'mailto:' + EMAIL;
+      a.textContent = EMAIL;
+      a.style.textDecoration = 'underline';
+      status.appendChild(a);
+    }
+  }
+
+  // záloha: klasické odoslanie formulára (funguje aj keď prehliadač zablokuje AJAX)
+  function nativeSubmit() {
+    var next = form.querySelector('input[name="_next"]');
+    if (!next) {
+      next = document.createElement('input');
+      next.type = 'hidden'; next.name = '_next';
+      form.appendChild(next);
+    }
+    next.value = location.origin + location.pathname + '?sent=1#kontakt';
+    form.action = 'https://formsubmit.co/' + EMAIL;
+    form.method = 'POST';
+    form.submit();
+  }
+
+  form.addEventListener('submit', async function (e) {
     e.preventDefault();
-    const status = document.getElementById('formStatus');
-    const submitBtn = contactForm.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    status.textContent = 'Odosielam...';
-    status.className = 'form-status';
+    var btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    say('Odosielam...', false);
     try {
-      const res = await fetch('https://formsubmit.co/ajax/d.i.davidilicc@gmail.com', {
+      var res = await fetch('https://formsubmit.co/ajax/' + EMAIL, {
         method: 'POST',
         headers: { 'Accept': 'application/json' },
-        body: new FormData(contactForm)
+        body: new FormData(form)
       });
-      if (res.ok) {
-        status.textContent = 'Správa odoslaná, ozvem sa čo najskôr!';
-        status.className = 'form-status ok';
-        contactForm.reset();
+      var data = {};
+      try { data = await res.json(); } catch (_) {}
+      var ok = res.ok && data.success !== 'false' && data.success !== false;
+      if (ok) {
+        say('Správa odoslaná, ozvem sa čo najskôr!', true);
+        form.reset();
+      } else if (/activat/i.test(String(data.message || ''))) {
+        console.warn('FormSubmit: formulár treba aktivovať (potvrdiť email od FormSubmit).', data);
+        say('Formulár zatiaľ nie je aktivovaný — napíš mi prosím priamo na email:', false, true);
       } else {
-        status.textContent = 'Niečo sa pokazilo, skús to prosím znova alebo napíš priamo na email.';
+        console.warn('FormSubmit odpoveď:', res.status, data);
+        say('Nepodarilo sa odoslať. Skús to prosím znova alebo napíš priamo na email:', false, true);
       }
     } catch (err) {
-      status.textContent = 'Niečo sa pokazilo, skús to prosím znova alebo napíš priamo na email.';
+      console.warn('AJAX odoslanie zlyhalo, skúšam klasické odoslanie:', err);
+      nativeSubmit();
+      return;
     }
-    submitBtn.disabled = false;
+    btn.disabled = false;
   });
-}
+
+  // návrat z klasického odoslania (?sent=1)
+  var params = new URLSearchParams(location.search);
+  if (params.get('sent') === '1') {
+    say('Správa odoslaná, ozvem sa čo najskôr!', true);
+    params.delete('sent');
+    var qs = params.toString();
+    history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
+  }
+})();
 </script>
 
 <script>
