@@ -449,8 +449,9 @@ footer a:hover{color:var(--text);}
         <input class="form-field" type="text" name="name" placeholder="Meno" required>
         <input class="form-field" type="email" name="email" placeholder="Email" required>
         <textarea class="form-field" name="message" placeholder="O čo ide? Čo potrebuješ a do kedy..." required></textarea>
-        <input type="hidden" name="_subject" value="Nová správa z made_by.david">
-        <input type="hidden" name="_captcha" value="false">
+        <input type="hidden" name="subject" value="Nová správa z made_by.david">
+        <input type="hidden" name="from_name" value="made_by.david web">
+        <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true">
         <button type="submit" class="btn">Odoslať správu</button>
         <div id="formStatus" class="form-status"></div>
       </form>
@@ -479,9 +480,10 @@ if (window.matchMedia('(hover: hover)').matches) {
 </script>
 
 <script>
-// kontaktný formulár (FormSubmit) — odoslanie bez opustenia stránky
+// kontaktný formulár (Web3Forms) — odoslanie bez opustenia stránky
 (function () {
   var EMAIL = 'd.i.davidilicc@gmail.com';
+  var ACCESS_KEY = '29048e50-2bf7-46a2-a609-615c9929e81b';   // <- sem príde prístupový kľúč z web3forms.com (je verejný, môže byť v kóde)
   var form = document.getElementById('contactForm');
   if (!form) return;
   var status = document.getElementById('formStatus');
@@ -506,23 +508,28 @@ if (window.matchMedia('(hover: hover)').matches) {
 
   form.addEventListener('submit', async function (e) {
     e.preventDefault();
+    if (ACCESS_KEY === 'YOUR_ACCESS_KEY_HERE') {            // kľúč ešte nie je vložený
+      fail('Formulár sa ešte nastavuje.');
+      return;
+    }
     var btn = form.querySelector('button[type="submit"]');
     btn.disabled = true;
     say('Odosielam...', false);
     try {
-      var res = await fetch('https://formsubmit.co/ajax/' + EMAIL, {
+      var fd = new FormData(form);
+      fd.append('access_key', ACCESS_KEY);
+      var res = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
         headers: { 'Accept': 'application/json' },
-        body: new FormData(form)
+        body: fd
       });
       var data = {};
       try { data = await res.json(); } catch (_) {}
-      var ok = res.ok && data.success !== 'false' && data.success !== false;
-      if (ok) {
+      if (res.ok && data.success === true) {
         say('Správa odoslaná, ozvem sa čo najskôr!', true);
         form.reset();
       } else {
-        console.warn('FormSubmit odpoveď:', res.status, data);
+        console.warn('Web3Forms odpoveď:', res.status, data);
         fail('Správu sa nepodarilo odoslať.');
       }
     } catch (err) {
